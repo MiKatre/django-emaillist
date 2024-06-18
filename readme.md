@@ -18,7 +18,6 @@ INSTALLED_APPS = [
 
 2. **Run Migrations**:
 ```bash
-python manage.py makemigrations emaillist
 python manage.py migrate
 ```
 
@@ -30,6 +29,57 @@ WEBSITE_URL = 'http://yourwebsite.com'
 ```
 
 ## Usage
+
+
+
+```Python
+from emaillist.utils import subscribe, unsubscribe
+```
+
+Subscribe to a list
+```Python
+subscribe("someone@email.com", "newsletter")
+```
+
+Unsubscribe from a list
+```Python
+unsubscribe("someone@email.com", "newsletter")
+```
+
+Check if subscribed
+```Python
+is_subscribed("someone@email.com", "newsletter")
+```
+
+Get subscribers for a list (use this for sending emails)
+```Python
+# Get all email subscribers
+get_list_members("newsletter")
+
+# Get only logged in users emails
+get_user_list_members("newsletter")
+
+# Get only subscribers without account
+get_non_user_list_members("newsletter")
+
+```
+
+Get all mailing lists
+```Python
+get_lists()
+```
+
+
+
+
+Do the same with logged in users
+```Python
+user = User.objects.get(username="someone")
+
+subscribe(user, "newsletter")
+unsubscribe(user, "newsletter")
+...
+```
 
 ### Utility Functions
 - `subscribe(identifier, list_name)`: Subscribe a user or email to a mailing list.

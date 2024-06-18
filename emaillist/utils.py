@@ -102,7 +102,7 @@ def check_token(token):
 def get_list_members(list_name):
     """
     Returns a list of email addresses that are subscribed to the list.
-    Users amd non-users are included.
+    Users and non-users are included.
     """
     return [
         subscription.email
