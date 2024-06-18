@@ -36,9 +36,15 @@ WEBSITE_URL = 'http://yourwebsite.com'
 from emaillist.utils import subscribe, unsubscribe
 ```
 
-Subscribe to a list
+Subscribe a guest to a list
 ```Python
 subscribe("someone@email.com", "newsletter")
+```
+
+Subscribe a user to a list
+```Python
+user = User.objects.get(username="someone")
+subscribe(user, "newsletter")
 ```
 
 Unsubscribe from a list
@@ -70,16 +76,6 @@ get_lists()
 ```
 
 
-
-
-Do the same with logged in users
-```Python
-user = User.objects.get(username="someone")
-
-subscribe(user, "newsletter")
-unsubscribe(user, "newsletter")
-...
-```
 
 ### Utility Functions
 - `subscribe(identifier, list_name)`: Subscribe a user or email to a mailing list.
