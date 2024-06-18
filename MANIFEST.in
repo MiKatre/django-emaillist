@@ -1,0 +1,5 @@
+include LICENSE
+include README.rst
+recursive-include django_emaillist/static *
+recursive-include django_emaillist/templates *
+recursive-include docs *

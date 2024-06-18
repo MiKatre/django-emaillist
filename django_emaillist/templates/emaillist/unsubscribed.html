@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Email Subscriptions" %}{% endblock title %}
+
+{% block content %}
+  <div style="margin: 0 auto; max-width: 600px; padding: 20px;">
+    <h2 style="text-align: center; font-weight: bold;">{% translate "Email subscription settings" %}</h2>
+
+    <div style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-top: 20px; text-align: left;">
+      {% translate "You have been successfully unsubscribed from this email list." %}
+    </div>
+
+    <form method="post" style="text-align: left; margin-top: 20px;">
+      {% csrf_token %}
+      <h4 style="font-weight: bold;">{% translate "It was a mistake?" %}</h4>
+      <button type="submit" style="background-color: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+        {% translate "Resubscribe" %}
+      </button>
+    </form>
+  </div>
+{% endblock content %}
