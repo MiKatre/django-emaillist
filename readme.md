@@ -99,3 +99,9 @@ Everyone is encouraged to help improve this project. Here are a few ways you can
 - Fix bugs and submit pull requests
 - Write, clarify, or fix documentation
 - Suggest or add new features
+
+Run tests (pipenv required)
+```Shell
+pipenv install --python 3.9
+pipenv run python runtests.py 
+```
