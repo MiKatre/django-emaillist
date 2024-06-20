@@ -1,13 +1,23 @@
-# Django Email List Management App
+# Django Email List
 
 <!-- Incredibly useful conversation: https://chat.openai.com/c/01d78616-2bec-41e5-b650-0f14791bd60b -->
 
 ## Description
-This Django app provides functionalities for managing email subscriptions. It allows subscribing and unsubscribing users or arbitrary email addresses to different mailing lists, and includes features such as unique and secure unsubscribe links and rate limiting. The templates extend "base.html" and are using inline styles to look reasonably good wether you using Boostrap, Tailwind or any other CSS framework.
+
+Django Email List manages email subscriptions to mailing lists. It supports subscribing/unsubscribing users and emails to arbitrary lists, with features like unique unsubscribe links, rate limiting, and double opt-in. The templates extend "base.html" and use inline styles compatible with CSS frameworks (Bootstrap, Tailwind, etc.).
+
 
 ## Installation
 
-1. **Add the App to Your Django Project**:
+1. **Install** 
+
+*The package is not yet on pypi*.
+
+```Shell
+pip install git+https://github.com/MiKatre/django-emaillist.git
+```
+
+2. **Add the App to Your Django Project**:
 In your `settings.py`, add the app to the `INSTALLED_APPS` list:
 ```python
 INSTALLED_APPS = [
@@ -16,7 +26,7 @@ INSTALLED_APPS = [
 ]
 ```
 
-2. **Run Migrations**:
+3. **Run Migrations**:
 ```bash
 python manage.py migrate
 ```
