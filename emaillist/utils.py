@@ -35,6 +35,12 @@ def subscribe(identifier, list_name, auto_send_confirmation=True):
     # auto_send_confirmation can be set to False for migration operations
     email = get_email(identifier)
     user = identifier if isinstance(identifier, User) else None
+
+    if Subscription.objects.filter(
+        email=email, list_name=list_name, is_subscribed=True, is_confirmed=True
+    ).exists():
+        raise Exception("User is already subscribed to this list")
+
     subscription, created = Subscription.objects.update_or_create(
         email=email,
         list_name=list_name,
