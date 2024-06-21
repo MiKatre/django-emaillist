@@ -48,7 +48,7 @@ from emaillist.utils import subscribe, unsubscribe
 
 Subscribe a guest to a list
 ```Python
-subscribe("someone@email.com", "newsletter") # Confirmation email automatically sent unless we pass auto_send_confirmation=False
+subscribe("someone@email.com", "newsletter")
 ```
 
 Subscribe a user to a list
