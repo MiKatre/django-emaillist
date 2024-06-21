@@ -48,7 +48,7 @@ from emaillist.utils import subscribe, unsubscribe
 
 Subscribe a guest to a list
 ```Python
-subscribe("someone@email.com", "newsletter")
+subscribe("someone@email.com", "newsletter") # Confirmation email automatically sent unless we pass auto_send_confirmation=False
 ```
 
 Subscribe a user to a list
@@ -88,7 +88,7 @@ get_lists()
 
 
 ### Utility Functions
-- `subscribe(identifier, list_name)`: Subscribe a user or email to a mailing list.
+- `subscribe(identifier, list_name)`: Subscribe a user or email to a mailing list and send confirmation link by email (if not user).
 - `unsubscribe(identifier, list_name)`: Unsubscribe a user or email from a mailing list.
 - `is_subscribed(identifier, list_name)`: Check if a user or email is subscribed to a mailing list.
 - `is_unsubscribed(identifier, list_name)`: Check if a user or email is unsubscribed from a mailing list.
