@@ -113,7 +113,7 @@ def get_list_members(list_name):
     return [
         subscription.email
         for subscription in Subscription.objects.filter(
-            list_name=list_name, is_subscribed=True
+            list_name=list_name, is_subscribed=True, is_confirmed=True
         )
     ]
 
@@ -124,7 +124,9 @@ def get_user_list_members(list_name):
     Ignore emails that are not associated with a user account.
     """
     return User.objects.filter(
-        subscriptions__list_name=list_name, subscriptions__is_subscribed=True
+        subscriptions__list_name=list_name,
+        subscriptions__is_subscribed=True,
+        subscriptions__is_confirmed=True,
     )
 
 
@@ -136,7 +138,10 @@ def get_non_user_list_members(list_name):
     return [
         subscription.email
         for subscription in Subscription.objects.filter(
-            list_name=list_name, is_subscribed=True, user__isnull=True
+            list_name=list_name,
+            is_subscribed=True,
+            user__isnull=True,
+            is_confirmed=True,
         )
     ]
 
