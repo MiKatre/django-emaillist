@@ -26,7 +26,19 @@ INSTALLED_APPS = [
 ]
 ```
 
-3. **Run Migrations**:
+3. **Include the URLs**:
+In your project's `urls.py`, include the emaillist urls:
+```python
+from django.urls import path, include
+
+urlpatterns = [
+    # ... other urls ...
+    path('email/', include('emaillist.urls')),
+]
+```
+
+4. **Run Migrations**: 
+Run the Django migrations to create the database tables:
 ```bash
 python manage.py migrate
 ```
