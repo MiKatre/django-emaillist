@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
+
 
 from .models import Subscription
 
@@ -23,8 +25,9 @@ def send_confirmation_email(email, list_name):
     )
     full_confirm_url = f"{settings.WEBSITE_URL}{confirm_url}"
     send_mail(
-        "Confirm your subscription",
-        f"Please click on the following link to confirm your subscription: {full_confirm_url}",
+        _("Confirm your subscription"),
+        _("Please click on the following link to confirm your subscription: ")
+        + full_confirm_url,
         settings.DEFAULT_FROM_EMAIL,
         [email],
         fail_silently=False,
@@ -39,7 +42,7 @@ def subscribe(identifier, list_name, auto_send_confirmation=True):
     if Subscription.objects.filter(
         email=email, list_name=list_name, is_subscribed=True, is_confirmed=True
     ).exists():
-        raise Exception("User is already subscribed to this list")
+        raise Exception(_("User is already subscribed to this list"))
 
     subscription, created = Subscription.objects.update_or_create(
         email=email,
