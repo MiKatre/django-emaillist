@@ -1,5 +1,5 @@
 include LICENSE
 include readme.md
 recursive-include django_emaillist/static *
-recursive-include django_emaillist/templates *
+recursive-include emaillist/templates *
 recursive-include docs *
