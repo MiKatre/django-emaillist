@@ -111,42 +111,38 @@ def check_token(token):
 def get_list_members(list_name):
     """
     Returns a list of email addresses that are subscribed to the list.
-    Users and non-users are included.
+    Users and non-users are included. Only confirmed and subscribed members are returned.
     """
-    return [
-        subscription.email
-        for subscription in Subscription.objects.filter(
-            list_name=list_name, is_subscribed=True, is_confirmed=True
-        )
-    ]
+    return list(Subscription.objects.filter(
+        list_name=list_name,
+        is_subscribed=True,
+        is_confirmed=True
+    ).values_list('email', flat=True))
 
 
 def get_user_list_members(list_name):
     """
     Returns a queryset of users that are subscribed to the list.
-    Ignore emails that are not associated with a user account.
+    Only confirmed and subscribed users are returned.
     """
     return User.objects.filter(
         subscriptions__list_name=list_name,
         subscriptions__is_subscribed=True,
-        subscriptions__is_confirmed=True,
-    )
+        subscriptions__is_confirmed=True
+    ).distinct()
 
 
 def get_non_user_list_members(list_name):
     """
     Returns a list of email addresses that are subscribed to the list but are not
-    associated with a user account.
+    associated with a user account. Only confirmed and subscribed members are returned.
     """
-    return [
-        subscription.email
-        for subscription in Subscription.objects.filter(
-            list_name=list_name,
-            is_subscribed=True,
-            user__isnull=True,
-            is_confirmed=True,
-        )
-    ]
+    return list(Subscription.objects.filter(
+        list_name=list_name,
+        is_subscribed=True,
+        is_confirmed=True,
+        user__isnull=True
+    ).values_list('email', flat=True))
 
 
 def get_lists():

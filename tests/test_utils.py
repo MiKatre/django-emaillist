@@ -70,3 +70,53 @@ class SubscriptionTests(TestCase):
         self.assertTrue(subscription.is_subscribed)
         self.assertFalse(subscription.is_unsubscribed)
         self.assertTrue(is_subscribed(self.user, "test_list"))
+
+    def test_get_list_members(self):
+        # Create subscriptions
+        subscribe(self.user, "test_list")
+        subscribe("nonuser@example.com", "test_list")
+        unsubscribe("unsubscribed@example.com", "test_list")
+        subscribe("unconfirmed@example.com", "test_list", auto_send_confirmation=False)
+
+        # Get list members
+        members = get_list_members("test_list")
+
+        # Check results
+        self.assertEqual(len(members), 2)
+        self.assertIn(self.user.email, members)
+        self.assertIn("nonuser@example.com", members)
+        self.assertNotIn("unsubscribed@example.com", members)
+        self.assertNotIn("unconfirmed@example.com", members)
+
+    def test_get_user_list_members(self):
+        # Create subscriptions
+        subscribe(self.user, "test_list")
+        subscribe("nonuser@example.com", "test_list")
+        unsubscribe(User.objects.create_user(username="unsubscribed", email="unsubscribed@example.com"), "test_list")
+        unconfirmed_user = User.objects.create_user(username="unconfirmed", email="unconfirmed@example.com")
+        subscribe(unconfirmed_user, "test_list", auto_send_confirmation=False)
+
+        # Get user list members
+        user_members = get_user_list_members("test_list")
+
+        # Check results
+        self.assertEqual(user_members.count(), 1)
+        self.assertIn(self.user, user_members)
+        self.assertNotIn(unconfirmed_user, user_members)
+
+    def test_get_non_user_list_members(self):
+        # Create subscriptions
+        subscribe(self.user, "test_list")
+        subscribe("nonuser@example.com", "test_list")
+        unsubscribe("unsubscribed@example.com", "test_list")
+        subscribe("unconfirmed@example.com", "test_list", auto_send_confirmation=False)
+
+        # Get non-user list members
+        non_user_members = get_non_user_list_members("test_list")
+
+        # Check results
+        self.assertEqual(len(non_user_members), 1)
+        self.assertIn("nonuser@example.com", non_user_members)
+        self.assertNotIn(self.user.email, non_user_members)
+        self.assertNotIn("unsubscribed@example.com", non_user_members)
+        self.assertNotIn("unconfirmed@example.com", non_user_members)
