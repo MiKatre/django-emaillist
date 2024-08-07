@@ -22,3 +22,4 @@ MANIFEST
 .env
 venv/
 .DS_Store
+.aider*
