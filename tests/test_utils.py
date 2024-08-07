@@ -78,6 +78,8 @@ class SubscriptionTests(TestCase):
         # Create subscriptions
         subscribe(self.user, "test_list")
         subscribe("nonuser@example.com", "test_list")
+        # Manually confirm the non-user subscription
+        Subscription.objects.filter(email="nonuser@example.com", list_name="test_list").update(is_confirmed=True)
         unsubscribe("unsubscribed@example.com", "test_list")
         subscribe("unconfirmed@example.com", "test_list", auto_send_confirmation=False)
 
@@ -111,6 +113,8 @@ class SubscriptionTests(TestCase):
         # Create subscriptions
         subscribe(self.user, "test_list")
         subscribe("nonuser@example.com", "test_list")
+        # Manually confirm the non-user subscription
+        Subscription.objects.filter(email="nonuser@example.com", list_name="test_list").update(is_confirmed=True)
         unsubscribe("unsubscribed@example.com", "test_list")
         subscribe("unconfirmed@example.com", "test_list", auto_send_confirmation=False)
 
