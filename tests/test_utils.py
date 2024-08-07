@@ -2,7 +2,10 @@ from django.test import TestCase
 from django.core import mail
 from django.contrib.auth import get_user_model
 from emaillist.models import Subscription
-from emaillist.utils import subscribe, unsubscribe, is_subscribed, is_unsubscribed
+from emaillist.utils import (
+    subscribe, unsubscribe, is_subscribed, is_unsubscribed,
+    get_list_members, get_user_list_members, get_non_user_list_members
+)
 
 User = get_user_model()
 
