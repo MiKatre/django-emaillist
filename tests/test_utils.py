@@ -10,6 +10,7 @@ from emaillist.utils import (
     get_list_members,
     get_user_list_members,
     get_non_user_list_members,
+    send_confirmation_email,
 )
 
 User = get_user_model()
@@ -145,3 +146,15 @@ class SubscriptionTests(TestCase):
         self.assertNotIn(self.user.email, non_user_members)
         self.assertNotIn("unsubscribed@example.com", non_user_members)
         self.assertNotIn("unconfirmed@example.com", non_user_members)
+
+    def test_send_confirmation_email_no_error(self):
+        # Test that send_confirmation_email doesn't raise any exceptions
+        try:
+            send_confirmation_email("test@example.com", "test_list")
+        except Exception as e:
+            self.fail(f"send_confirmation_email raised an exception: {str(e)}")
+
+        # Check that an email was sent
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, "Confirm your subscription")
+        self.assertEqual(mail.outbox[0].to, ["test@example.com"])

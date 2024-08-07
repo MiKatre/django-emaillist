@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -25,14 +25,21 @@ def send_confirmation_email(email, list_name):
         kwargs={"email": email, "token": token, "list_name": list_name},
     )
     full_confirm_url = f"{settings.WEBSITE_URL}{confirm_url}"
-    send_mail(
-        _("Confirm your subscription"),
-        _("Please click on the following link to confirm your subscription: ")
-        + full_confirm_url,
-        settings.DEFAULT_FROM_EMAIL,
-        [email],
-        fail_silently=False,
-    )
+    
+    subject = _("Confirm your subscription")
+    text_content = _("Please click on the following link to confirm your subscription: ") + full_confirm_url
+    html_content = f"""
+    <html>
+    <body>
+        <p>{_("Please click on the following link to confirm your subscription:")}</p>
+        <p><a href="{full_confirm_url}">{_("Confirm Subscription")}</a></p>
+    </body>
+    </html>
+    """
+    
+    msg = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email])
+    msg.attach_alternative(html_content, "text/html")
+    msg.send(fail_silently=False)
 
 
 def subscribe(identifier, list_name, auto_send_confirmation=True):
