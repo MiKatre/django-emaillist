@@ -112,6 +112,7 @@ get_lists()
 
 ### Views
 - `unsubscribe_view`: A view to handle unsubscription requests from unsubscribe links.
+- `confirm_subscription`: A view to handle subscription confirmation requests.
 
 ### Contributing
 
