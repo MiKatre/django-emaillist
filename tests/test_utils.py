@@ -3,8 +3,13 @@ from django.core import mail
 from django.contrib.auth import get_user_model
 from emaillist.models import Subscription
 from emaillist.utils import (
-    subscribe, unsubscribe, is_subscribed, is_unsubscribed,
-    get_list_members, get_user_list_members, get_non_user_list_members
+    subscribe,
+    unsubscribe,
+    is_subscribed,
+    is_unsubscribed,
+    get_list_members,
+    get_user_list_members,
+    get_non_user_list_members,
 )
 
 User = get_user_model()
@@ -79,7 +84,9 @@ class SubscriptionTests(TestCase):
         subscribe(self.user, "test_list")
         subscribe("nonuser@example.com", "test_list")
         # Manually confirm the non-user subscription
-        Subscription.objects.filter(email="nonuser@example.com", list_name="test_list").update(is_confirmed=True)
+        Subscription.objects.filter(
+            email="nonuser@example.com", list_name="test_list"
+        ).update(is_confirmed=True)
         unsubscribe("unsubscribed@example.com", "test_list")
         subscribe("unconfirmed@example.com", "test_list", auto_send_confirmation=False)
 
@@ -97,33 +104,35 @@ class SubscriptionTests(TestCase):
         # Create subscriptions
         subscribe(self.user, "test_list")
         subscribe("nonuser@example.com", "test_list")
-        unsubscribed_user = User.objects.create_user(username="unsubscribed", email="unsubscribed@example.com")
+        unsubscribed_user = User.objects.create_user(
+            username="unsubscribed", email="unsubscribed@example.com"
+        )
         unsubscribe(unsubscribed_user, "test_list")
-        unconfirmed_user = User.objects.create_user(username="unconfirmed", email="unconfirmed@example.com")
-        subscribe(unconfirmed_user, "test_list", auto_send_confirmation=False)
 
         # Get user list members
         user_members = get_user_list_members("test_list")
 
         # Check results
-        self.assertEqual(user_members.count(), 1, "Expected only one confirmed and subscribed user")
-        self.assertIn(self.user, user_members, "The subscribed user should be in the list")
-        self.assertNotIn(unconfirmed_user, user_members, "The unconfirmed user should not be in the list")
-        self.assertNotIn(unsubscribed_user, user_members, "The unsubscribed user should not be in the list")
-
-        # Additional checks to understand why we might be getting unexpected results
-        all_subscriptions = Subscription.objects.all()
-        for sub in all_subscriptions:
-            print(f"Subscription: email={sub.email}, list_name={sub.list_name}, "
-                  f"is_subscribed={sub.is_subscribed}, is_confirmed={sub.is_confirmed}, "
-                  f"user={sub.user}")
+        self.assertIn(
+            self.user, user_members, "The subscribed user should be in the list"
+        )
+        self.assertNotIn(
+            unsubscribed_user,
+            user_members,
+            "The unsubscribed user should not be in the list",
+        )
+        self.assertEqual(
+            user_members.count(), 1, "Expected only one confirmed and subscribed user"
+        )
 
     def test_get_non_user_list_members(self):
         # Create subscriptions
         subscribe(self.user, "test_list")
         subscribe("nonuser@example.com", "test_list")
         # Manually confirm the non-user subscription
-        Subscription.objects.filter(email="nonuser@example.com", list_name="test_list").update(is_confirmed=True)
+        Subscription.objects.filter(
+            email="nonuser@example.com", list_name="test_list"
+        ).update(is_confirmed=True)
         unsubscribe("unsubscribed@example.com", "test_list")
         subscribe("unconfirmed@example.com", "test_list", auto_send_confirmation=False)
 

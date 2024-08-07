@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 from .models import Subscription
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -113,11 +114,11 @@ def get_list_members(list_name):
     Returns a list of email addresses that are subscribed to the list.
     Users and non-users are included. Only confirmed and subscribed members are returned.
     """
-    return list(Subscription.objects.filter(
-        list_name=list_name,
-        is_subscribed=True,
-        is_confirmed=True
-    ).values_list('email', flat=True))
+    return list(
+        Subscription.objects.filter(
+            list_name=list_name, is_subscribed=True, is_confirmed=True
+        ).values_list("email", flat=True)
+    )
 
 
 def get_user_list_members(list_name):
@@ -128,7 +129,7 @@ def get_user_list_members(list_name):
     return User.objects.filter(
         subscriptions__list_name=list_name,
         subscriptions__is_subscribed=True,
-        subscriptions__is_confirmed=True
+        subscriptions__is_confirmed=True,
     ).distinct()
 
 
@@ -137,12 +138,14 @@ def get_non_user_list_members(list_name):
     Returns a list of email addresses that are subscribed to the list but are not
     associated with a user account. Only confirmed and subscribed members are returned.
     """
-    return list(Subscription.objects.filter(
-        list_name=list_name,
-        is_subscribed=True,
-        is_confirmed=True,
-        user__isnull=True
-    ).values_list('email', flat=True))
+    return list(
+        Subscription.objects.filter(
+            list_name=list_name,
+            is_subscribed=True,
+            is_confirmed=True,
+            user__isnull=True,
+        ).values_list("email", flat=True)
+    )
 
 
 def get_lists():
