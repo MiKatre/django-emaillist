@@ -25,19 +25,22 @@ def send_confirmation_email(email, list_name):
         kwargs={"email": email, "token": token, "list_name": list_name},
     )
     full_confirm_url = f"{settings.WEBSITE_URL}{confirm_url}"
-    
+
     subject = _("Confirm your subscription")
-    text_content = _("Please click on the following link to confirm your subscription: ") + full_confirm_url
+    body_text = _("Please click on the following link to confirm your subscription: ")
+    text_content = body_text + full_confirm_url
     html_content = f"""
     <html>
     <body>
-        <p>{_("Please click on the following link to confirm your subscription:")}</p>
-        <p><a href="{full_confirm_url}">{_("Confirm Subscription")}</a></p>
+        <p>{body_text}</p>
+        <p><a href="{full_confirm_url}">{subject}</a></p>
     </body>
     </html>
     """
-    
-    msg = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email])
+
+    msg = EmailMultiAlternatives(
+        subject, text_content, settings.DEFAULT_FROM_EMAIL, [email]
+    )
     msg.attach_alternative(html_content, "text/html")
     msg.send(fail_silently=False)
 
