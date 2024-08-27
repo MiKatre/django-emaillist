@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django_ratelimit.decorators import ratelimit
+from django.utils.translation import gettext as _
 
 from .models import Subscription
 from .signals import subscription_confirmed, unsubscription_confirmed
@@ -22,7 +23,7 @@ def unsubscribe_view(request, email, token, list_name):
         email = email
 
     if not check_token(token):
-        return HttpResponse("Invalid or expired unsubscribe link.", status=400)
+        return HttpResponse(_("Invalid or expired unsubscribe link."), status=400)
 
     # If the request is POST, means the user has clicked the "Resubscribe" btn.
     if request.method == "POST":

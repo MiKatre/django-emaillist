@@ -1,0 +1,87 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-08-27 14:47+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: emaillist/templates/emaillist/resubscribed.html:4
+#: emaillist/templates/emaillist/unsubscribed.html:4
+msgid "Email Subscriptions"
+msgstr "Suscripciones de correo electrónico"
+
+#: emaillist/templates/emaillist/resubscribed.html:8
+#: emaillist/templates/emaillist/unsubscribed.html:8
+msgid "Email subscription settings"
+msgstr "Configuración de suscripción de correo electrónico"
+
+#: emaillist/templates/emaillist/resubscribed.html:11
+msgid "You have been successfully resubscribed to the email list."
+msgstr "Has sido resubscrito exitosamente a la lista de correo electrónico."
+
+#: emaillist/templates/emaillist/resubscribed.html:15
+#: emaillist/templates/emaillist/unsubscribed.html:16
+msgid "It was a mistake?"
+msgstr "¿Fue un error?"
+
+#: emaillist/templates/emaillist/resubscribed.html:17
+msgid "Unsubscribe"
+msgstr "Cancelar suscripción"
+
+#: emaillist/templates/emaillist/subscription_confirmed.html:4
+msgid "Email Subscription Confirmation"
+msgstr "Confirmación de suscripción de correo electrónico"
+
+#: emaillist/templates/emaillist/subscription_confirmed.html:8
+msgid "Email Subscription Confirmed"
+msgstr "Suscripción de correo electrónico confirmada"
+
+#: emaillist/templates/emaillist/subscription_confirmed.html:11
+msgid "Your subscription has been successfully confirmed. Thank you!"
+msgstr "Tu suscripción ha sido confirmada exitosamente. ¡Gracias!"
+
+#: emaillist/templates/emaillist/subscription_error.html:4
+#: emaillist/templates/emaillist/subscription_error.html:8
+msgid "Email Subscription Error"
+msgstr "Error de suscripción de correo electrónico"
+
+#: emaillist/templates/emaillist/subscription_error.html:11
+msgid "Invalid or expired confirmation link."
+msgstr "Enlace de confirmación inválido o expirado."
+
+#: emaillist/templates/emaillist/unsubscribed.html:11
+msgid "You have been successfully unsubscribed from this email list."
+msgstr "Has sido dado de baja exitosamente de esta lista de correo electrónico."
+
+#: emaillist/templates/emaillist/unsubscribed.html:18
+msgid "Resubscribe"
+msgstr "Volver a suscribirse"
+
+#: emaillist/utils.py:29
+msgid "Confirm your subscription"
+msgstr "Confirma tu suscripción"
+
+#: emaillist/utils.py:30
+msgid "Please click on the following link to confirm your subscription: "
+msgstr "Por favor, haz clic en el siguiente enlace para confirmar tu suscripción: "
+
+#: emaillist/utils.py:53
+msgid "User is already subscribed to this list"
+msgstr "El usuario ya está suscrito a esta lista"
+
+#: emaillist/views.py:26
+msgid "Invalid or expired unsubscribe link."
+msgstr "Enlace de cancelación de suscripción inválido o expirado."
