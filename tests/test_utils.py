@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.core import mail
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext as _
+from django.utils import translation
 from emaillist.models import Subscription
 from emaillist.utils import (
     subscribe,
@@ -158,3 +160,12 @@ class SubscriptionTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, "Confirm your subscription")
         self.assertEqual(mail.outbox[0].to, ["test@example.com"])
+
+    def test_spanish_translation(self):
+        with translation.override('es'):
+            # Test a simple string that should be translated
+            translated_text = _("Confirm your subscription")
+            self.assertEqual(translated_text, "Confirma tu suscripción")
+
+        # Switch back to default language
+        translation.activate('en')

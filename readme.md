@@ -128,3 +128,10 @@ Run tests (pipenv required)
 pipenv install --python 3.9
 pipenv run python runtests.py 
 ```
+
+Translate
+```Shell
+django-admin makemessages -l es
+django-admin makemessages -l fr
+django-admin compilemessages
+```

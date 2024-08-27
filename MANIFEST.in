@@ -3,3 +3,4 @@ include readme.md
 recursive-include django_emaillist/static *
 recursive-include emaillist/templates *
 recursive-include docs *
+recursive-include */locale *
