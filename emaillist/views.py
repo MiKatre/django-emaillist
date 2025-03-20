@@ -27,7 +27,8 @@ def unsubscribe_view(request, email, token, list_name):
 
     # If the request is POST, means the user has clicked the "Resubscribe" btn.
     if request.method == "POST":
-        subscribe(email, list_name)
+        identifier = user if user else email
+        subscribe(identifier, list_name)
         subscription_confirmed.send(
             sender=Subscription, email=email, list_name=list_name
         )

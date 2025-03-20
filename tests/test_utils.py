@@ -1,8 +1,12 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.core import mail
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 from django.utils import translation
+from django.urls import reverse
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from unittest.mock import patch
 from emaillist.models import Subscription
 from emaillist.utils import (
     subscribe,
@@ -14,6 +18,7 @@ from emaillist.utils import (
     get_non_user_list_members,
     send_confirmation_email,
     get_unsubscribe_url,
+    make_token,
 )
 
 User = get_user_model()
@@ -212,3 +217,45 @@ class SubscriptionTests(TestCase):
         self.assertIn(self.user.email, url1)
         self.assertIn(self.user.email, url2)
         self.assertIn(self.user.email, url3)
+
+    @patch('django.template.response.TemplateResponse.render')
+    def test_user_resubscribe_behavior(self, mock_render):
+        """Test that when a user unsubscribes and then resubscribes, 
+        the subscription remains confirmed and associated with the user."""
+        
+        # Setup mock render to prevent template errors
+        mock_render.return_value = HttpResponse('Mocked response')
+        
+        # 1. Create initial subscription for user
+        list_name = "test_newsletter"
+        subscribe(self.user, list_name)
+        
+        # Verify initial subscription state
+        subscription = Subscription.objects.get(email=self.user.email, list_name=list_name)
+        self.assertTrue(subscription.is_subscribed)
+        self.assertFalse(subscription.is_unsubscribed)
+        self.assertTrue(subscription.is_confirmed)  # User subscriptions are auto-confirmed
+        self.assertEqual(subscription.user, self.user)
+        
+        # 2. Generate token for unsubscribe URL
+        token = make_token(self.user.email)
+        
+        # 3. Unsubscribe the user directly rather than using the view
+        unsubscribe(self.user, list_name)
+        
+        # 4. Verify unsubscribed state
+        subscription.refresh_from_db()
+        self.assertFalse(subscription.is_subscribed)
+        self.assertTrue(subscription.is_unsubscribed)
+        self.assertTrue(subscription.is_confirmed)  # Confirmation status shouldn't change
+        self.assertEqual(subscription.user, self.user)  # User association shouldn't change
+        
+        # 5. Resubscribe the user
+        subscribe(self.user, list_name)
+        
+        # 6. Verify resubscribed state
+        subscription.refresh_from_db()
+        self.assertTrue(subscription.is_subscribed)
+        self.assertFalse(subscription.is_unsubscribed)
+        self.assertTrue(subscription.is_confirmed)  # Should remain confirmed
+        self.assertEqual(subscription.user, self.user)  # User association should remain
