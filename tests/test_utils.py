@@ -13,6 +13,7 @@ from emaillist.utils import (
     get_user_list_members,
     get_non_user_list_members,
     send_confirmation_email,
+    get_unsubscribe_url,
 )
 
 User = get_user_model()
@@ -169,3 +170,19 @@ class SubscriptionTests(TestCase):
 
         # Switch back to default language
         translation.activate('en')
+
+    def test_unsubscribe_url_generation(self):
+        # Test unsubscribe URL for a user
+        user_url = get_unsubscribe_url(self.user, "test_list")
+        self.assertIn(self.user.email, user_url)
+        self.assertIn("test_list", user_url)
+        self.assertIn("/unsubscribe/", user_url)
+
+        # Test unsubscribe URL for a non-user email
+        non_user_url = get_unsubscribe_url("test@example.com", "test_list")
+        self.assertIn("test@example.com", non_user_url)
+        self.assertIn("test_list", non_user_url)
+        self.assertIn("/unsubscribe/", non_user_url)
+
+        # Verify URLs are different for different emails
+        self.assertNotEqual(user_url, non_user_url)

@@ -114,6 +114,27 @@ get_lists()
 - `unsubscribe_view`: A view to handle unsubscription requests from unsubscribe links.
 - `confirm_subscription`: A view to handle subscription confirmation requests.
 
+### Signals
+Django Email List provides two signals that you can connect to for additional functionality:
+
+- `subscription_confirmed`: Sent when a subscription is confirmed.
+- `unsubscription_confirmed`: Sent when an unsubscription is confirmed.
+
+You can connect to these signals in your code like this:
+
+```python
+from django.dispatch import receiver
+from emaillist.signals import subscription_confirmed, unsubscription_confirmed
+
+@receiver(subscription_confirmed)
+def handle_subscription_confirmed(sender, email, list_name, **kwargs):
+    print(f"Subscription confirmed for {email} to {list_name}")
+
+@receiver(unsubscription_confirmed)
+def handle_unsubscription_confirmed(sender, email, list_name, **kwargs):
+    print(f"Unsubscription confirmed for {email} from {list_name}")
+```
+
 ### Contributing
 
 Everyone is encouraged to help improve this project. Here are a few ways you can help:
