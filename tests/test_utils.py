@@ -186,3 +186,29 @@ class SubscriptionTests(TestCase):
 
         # Verify URLs are different for different emails
         self.assertNotEqual(user_url, non_user_url)
+
+    def test_unsubscribe_url_generation_multiple_lists(self):
+        # Subscribe user to multiple lists
+        subscribe(self.user, "list1")
+        subscribe(self.user, "list2")
+        subscribe(self.user, "list3")
+
+        # Generate unsubscribe URLs for each list
+        url1 = get_unsubscribe_url(self.user, "list1")
+        url2 = get_unsubscribe_url(self.user, "list2")
+        url3 = get_unsubscribe_url(self.user, "list3")
+
+        # Verify each URL contains the correct list name
+        self.assertIn("list1", url1)
+        self.assertIn("list2", url2)
+        self.assertIn("list3", url3)
+
+        # Verify URLs are different for different lists
+        self.assertNotEqual(url1, url2)
+        self.assertNotEqual(url2, url3)
+        self.assertNotEqual(url1, url3)
+
+        # Verify each URL contains the user's email
+        self.assertIn(self.user.email, url1)
+        self.assertIn(self.user.email, url2)
+        self.assertIn(self.user.email, url3)
