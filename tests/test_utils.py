@@ -54,12 +54,22 @@ class SubscriptionTests(TestCase):
         self.assertTrue(is_unsubscribed(self.user, "test_list"))
 
     def test_subscription_uniqueness(self):
-        # Ensuring that a user can't be subscribed to the same list more than once
+        # Create an initial subscription
         subscribe(self.user, "unique_list")
-        with self.assertRaises(
-            Exception
-        ):  # This should raise an IntegrityError or similar exception
-            subscribe(self.user, "unique_list")
+        
+        # Subscribe again to the same list - should not raise exception now,
+        # but should update the existing subscription
+        second_subscription = subscribe(self.user, "unique_list")
+        
+        # Verify there's only one subscription for this user and list
+        count = Subscription.objects.filter(
+            email=self.user.email, list_name="unique_list"
+        ).count()
+        self.assertEqual(count, 1)
+        
+        # Verify subscription is still active
+        self.assertTrue(second_subscription.is_subscribed)
+        self.assertTrue(second_subscription.is_confirmed)
 
     def test_subscribe_non_user(self):
         # Test subscribing with an email address that is not linked to a user
@@ -259,3 +269,76 @@ class SubscriptionTests(TestCase):
         self.assertFalse(subscription.is_unsubscribed)
         self.assertTrue(subscription.is_confirmed)  # Should remain confirmed
         self.assertEqual(subscription.user, self.user)  # User association should remain
+
+    @patch('django.template.response.TemplateResponse.render')
+    def test_non_user_resubscribe_behavior(self, mock_render):
+        """Test that when a non-user email unsubscribes and then resubscribes,
+        the subscription maintains its confirmed status."""
+        
+        # Setup mock render to prevent template errors
+        mock_render.return_value = HttpResponse('Mocked response')
+        
+        # 1. Create initial subscription for non-user email
+        email = "nonuser@example.com"
+        list_name = "test_newsletter"
+        subscribe(email, list_name)
+        
+        # 2. Manually confirm the subscription (simulating email confirmation)
+        subscription = Subscription.objects.get(email=email, list_name=list_name)
+        subscription.is_confirmed = True
+        subscription.save()
+        
+        # Verify initial subscription state
+        subscription.refresh_from_db()
+        self.assertTrue(subscription.is_subscribed)
+        self.assertFalse(subscription.is_unsubscribed)
+        self.assertTrue(subscription.is_confirmed)
+        self.assertIsNone(subscription.user)
+        
+        # 3. Unsubscribe the email directly rather than using the view
+        unsubscribe(email, list_name)
+        
+        # 4. Verify unsubscribed state
+        subscription.refresh_from_db()
+        self.assertFalse(subscription.is_subscribed)
+        self.assertTrue(subscription.is_unsubscribed)
+        self.assertTrue(subscription.is_confirmed)  # Confirmation status shouldn't change
+        self.assertIsNone(subscription.user)
+        
+        # 5. Resubscribe the email
+        subscribe(email, list_name)
+        
+        # 6. Verify resubscribed state
+        subscription.refresh_from_db()
+        self.assertTrue(subscription.is_subscribed)
+        self.assertFalse(subscription.is_unsubscribed)
+        self.assertTrue(subscription.is_confirmed)  # Should remain confirmed
+        self.assertIsNone(subscription.user)
+
+    def test_subscribe_already_confirmed(self):
+        """Test that subscribing an already confirmed subscription returns the existing subscription
+        without modification."""
+        
+        # 1. Create initial subscription for non-user email
+        email = "test@example.com"
+        list_name = "test_list"
+        initial_subscription = subscribe(email, list_name)
+        
+        # 2. Manually confirm the subscription
+        initial_subscription.is_confirmed = True
+        initial_subscription.save()
+        
+        # 3. Subscribe again
+        second_subscription = subscribe(email, list_name)
+        
+        # 4. Verify that we got back the same subscription object
+        self.assertEqual(initial_subscription.id, second_subscription.id)
+        
+        # 5. Verify that no changes were made to the subscription
+        self.assertEqual(initial_subscription.is_confirmed, second_subscription.is_confirmed)
+        self.assertEqual(initial_subscription.is_subscribed, second_subscription.is_subscribed)
+        self.assertEqual(initial_subscription.is_unsubscribed, second_subscription.is_unsubscribed)
+        self.assertEqual(initial_subscription.user, second_subscription.user)
+        
+        # 6. Verify that no confirmation email was sent
+        self.assertEqual(len(mail.outbox), 1)  # Only the initial subscription email

@@ -49,12 +49,19 @@ def subscribe(identifier, list_name, auto_send_confirmation=True):
     # auto_send_confirmation can be set to False for migration operations
     email = get_email(identifier)
     user = identifier if isinstance(identifier, User) else None
-
-    if Subscription.objects.filter(
-        email=email, list_name=list_name, is_subscribed=True, is_confirmed=True
-    ).exists():
-        raise Exception(_("User is already subscribed to this list"))
-
+    
+    # Get existing subscription if it exists
+    existing_subscription = Subscription.objects.filter(
+        email=email, list_name=list_name
+    ).first()
+    
+    # If the user is already subscribed and confirmed, we don't need to create a new subscription
+    if existing_subscription and existing_subscription.is_subscribed and existing_subscription.is_confirmed:
+        return existing_subscription
+    
+    # Determine if we should keep the existing confirmation status
+    is_confirmed = True if user else (existing_subscription.is_confirmed if existing_subscription else False)
+    
     subscription, created = Subscription.objects.update_or_create(
         email=email,
         list_name=list_name,
@@ -62,11 +69,11 @@ def subscribe(identifier, list_name, auto_send_confirmation=True):
             "is_subscribed": True,
             "is_unsubscribed": False,
             "user": user,
-            "is_confirmed": True if user else False,
+            "is_confirmed": is_confirmed,
         },
     )
 
-    # Send confirmation email only for guests (non-users)
+    # Send confirmation email only for guests (non-users) and only if it's a new subscription
     if created and not user and auto_send_confirmation:
         send_confirmation_email(email, list_name)
 
