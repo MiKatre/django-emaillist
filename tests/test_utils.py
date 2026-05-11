@@ -271,6 +271,37 @@ class SubscriptionTests(TestCase):
         self.assertEqual(subscription.user, self.user)  # User association should remain
 
     @patch('django.template.response.TemplateResponse.render')
+    def test_non_user_resubscribe_view(self, mock_render):
+        """Test that a non-user email can resubscribe from the unsubscribe page."""
+        mock_render.return_value = HttpResponse('Mocked response')
+
+        email = "nonuser-view@example.com"
+        list_name = "test_newsletter"
+        subscribe(email, list_name)
+        Subscription.objects.filter(email=email, list_name=list_name).update(
+            is_confirmed=True
+        )
+        unsubscribe(email, list_name)
+
+        response = self.client.post(
+            reverse(
+                "email_optout",
+                kwargs={
+                    "email": email,
+                    "token": make_token(email),
+                    "list_name": list_name,
+                },
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        subscription = Subscription.objects.get(email=email, list_name=list_name)
+        self.assertTrue(subscription.is_subscribed)
+        self.assertFalse(subscription.is_unsubscribed)
+        self.assertTrue(subscription.is_confirmed)
+        self.assertIsNone(subscription.user)
+
+    @patch('django.template.response.TemplateResponse.render')
     def test_non_user_resubscribe_behavior(self, mock_render):
         """Test that when a non-user email unsubscribes and then resubscribes,
         the subscription maintains its confirmed status."""

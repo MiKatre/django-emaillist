@@ -16,11 +16,12 @@ User = get_user_model()
 @ratelimit(key="ip", rate="5/m", block=True)
 def unsubscribe_view(request, email, token, list_name):
     # Attempt to retrieve the user by username; if not found, use identifier as email
+    user = None
     try:
         user = User.objects.get(email=email)
         email = user.email
     except User.DoesNotExist:
-        email = email
+        pass
 
     if not check_token(token):
         return HttpResponse(_("Invalid or expired unsubscribe link."), status=400)
