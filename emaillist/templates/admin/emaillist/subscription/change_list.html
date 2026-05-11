@@ -1,0 +1,163 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools %}
+  {{ block.super }}
+
+  {% if emaillist_stats %}
+    <style>
+      .emaillist-stats {
+        clear: both;
+        display: grid;
+        gap: 1rem;
+        margin: 0 0 1.5rem;
+      }
+      .emaillist-stats__cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+      }
+      .emaillist-stats__card,
+      .emaillist-stats__panel {
+        background: var(--body-bg, #fff);
+        border: 1px solid var(--hairline-color, #ddd);
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+      }
+      .emaillist-stats__label {
+        color: var(--body-quiet-color, #666);
+        font-size: 0.75rem;
+        margin: 0 0 0.25rem;
+        text-transform: uppercase;
+      }
+      .emaillist-stats__value {
+        font-size: 1.6rem;
+        font-weight: 600;
+        line-height: 1.2;
+        margin: 0;
+      }
+      .emaillist-stats__grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+        gap: 1rem;
+      }
+      .emaillist-stats__trend-row {
+        align-items: center;
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: 6.5rem minmax(80px, 1fr) 2.5rem;
+        margin: 0.35rem 0;
+      }
+      .emaillist-stats__bar-track {
+        background: var(--darkened-bg, #f8f8f8);
+        border-radius: 999px;
+        height: 0.65rem;
+        overflow: hidden;
+      }
+      .emaillist-stats__bar {
+        background: var(--primary, #79aec8);
+        display: block;
+        height: 100%;
+      }
+      .emaillist-stats__table {
+        width: 100%;
+      }
+      .emaillist-stats__table th,
+      .emaillist-stats__table td {
+        padding: 0.25rem 0.35rem;
+        text-align: left;
+      }
+      @media (max-width: 900px) {
+        .emaillist-stats__grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+
+    <section class="emaillist-stats" aria-labelledby="emaillist-stats-title">
+      <h2 id="emaillist-stats-title">
+        {% trans "Email list stats" %}{% if emaillist_stats.list_name %}: {{ emaillist_stats.list_name }}{% endif %}
+      </h2>
+
+      <div class="emaillist-stats__cards">
+        <div class="emaillist-stats__card">
+          <p class="emaillist-stats__label">{% trans "Confirmed today" %}</p>
+          <p class="emaillist-stats__value">{{ emaillist_stats.new_today }}</p>
+        </div>
+        <div class="emaillist-stats__card">
+          <p class="emaillist-stats__label">{% trans "Confirmed yesterday" %}</p>
+          <p class="emaillist-stats__value">{{ emaillist_stats.new_yesterday }}</p>
+        </div>
+        <div class="emaillist-stats__card">
+          <p class="emaillist-stats__label">{% trans "Confirmed last 7 days" %}</p>
+          <p class="emaillist-stats__value">{{ emaillist_stats.new_last_7_days }}</p>
+        </div>
+        <div class="emaillist-stats__card">
+          <p class="emaillist-stats__label">{% trans "Confirmed last 30 days" %}</p>
+          <p class="emaillist-stats__value">{{ emaillist_stats.new_last_30_days }}</p>
+        </div>
+        <div class="emaillist-stats__card">
+          <p class="emaillist-stats__label">{% trans "Active confirmed" %}</p>
+          <p class="emaillist-stats__value">{{ emaillist_stats.active }}</p>
+        </div>
+        <div class="emaillist-stats__card">
+          <p class="emaillist-stats__label">{% trans "Unconfirmed" %}</p>
+          <p class="emaillist-stats__value">{{ emaillist_stats.unconfirmed }}</p>
+        </div>
+        <div class="emaillist-stats__card">
+          <p class="emaillist-stats__label">{% trans "Unsubscribed" %}</p>
+          <p class="emaillist-stats__value">{{ emaillist_stats.unsubscribed }}</p>
+        </div>
+      </div>
+
+      <div class="emaillist-stats__grid">
+        <div class="emaillist-stats__panel">
+          <h3>{% trans "Weekly confirmed trend" %}</h3>
+          {% for item in emaillist_trend %}
+            <div class="emaillist-stats__trend-row">
+              <span>
+                {% if forloop.last %}
+                  {% trans "This week" %}
+                {% else %}
+                  {% trans "Week of" %} {{ item.day|date:"M j" }}
+                {% endif %}
+              </span>
+              <span class="emaillist-stats__bar-track">
+                <span class="emaillist-stats__bar" style="width: {{ item.bar_width }}%;"></span>
+              </span>
+              <strong>{{ item.count }}</strong>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="emaillist-stats__panel">
+          <h3>{% trans "By list" %}</h3>
+          <table class="emaillist-stats__table">
+            <thead>
+              <tr>
+                <th>{% trans "List" %}</th>
+                <th>{% trans "Active" %}</th>
+                <th>{% trans "Unconfirmed" %}</th>
+                <th>{% trans "Unsubscribed" %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in emaillist_stats.by_list %}
+                <tr>
+                  <td>{{ row.list_name }}</td>
+                  <td>{{ row.active }}</td>
+                  <td>{{ row.unconfirmed }}</td>
+                  <td>{{ row.unsubscribed }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="4">{% trans "No subscriptions yet." %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}

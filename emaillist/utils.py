@@ -1,13 +1,15 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import EmailMultiAlternatives
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
+from django.db.models import Count, Q
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-
 from .models import Subscription
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -167,3 +169,141 @@ def get_non_user_list_members(list_name):
 
 def get_lists():
     return list(Subscription.objects.values_list("list_name", flat=True).distinct())
+
+
+def _current_date(now=None):
+    if now is None:
+        now = timezone.now()
+
+    if timezone.is_aware(now):
+        return timezone.localtime(now).date()
+
+    return now.date()
+
+
+def _subscription_queryset(list_name=None):
+    queryset = Subscription.objects.all()
+    if list_name:
+        queryset = queryset.filter(list_name=list_name)
+    return queryset
+
+
+def get_subscription_stats(list_name=None, now=None):
+    """
+    Return high-level subscription counts for admin dashboards or custom views.
+    """
+    today = _current_date(now)
+    yesterday = today - timedelta(days=1)
+    last_7_days = today - timedelta(days=6)
+    last_30_days = today - timedelta(days=29)
+    queryset = _subscription_queryset(list_name)
+    active_queryset = queryset.filter(is_subscribed=True, is_confirmed=True)
+
+    by_list = list(
+        queryset.values("list_name")
+        .annotate(
+            total=Count("id"),
+            active=Count("id", filter=Q(is_subscribed=True, is_confirmed=True)),
+            unconfirmed=Count(
+                "id", filter=Q(is_subscribed=True, is_confirmed=False)
+            ),
+            unsubscribed=Count("id", filter=Q(is_unsubscribed=True)),
+        )
+        .order_by("-active", "list_name")
+    )
+
+    return {
+        "list_name": list_name,
+        "new_today": active_queryset.filter(subscribed_at__date=today).count(),
+        "new_yesterday": active_queryset.filter(subscribed_at__date=yesterday).count(),
+        "new_last_7_days": active_queryset.filter(
+            subscribed_at__date__gte=last_7_days
+        ).count(),
+        "new_last_30_days": active_queryset.filter(
+            subscribed_at__date__gte=last_30_days
+        ).count(),
+        "total": queryset.count(),
+        "active": active_queryset.count(),
+        "unconfirmed": queryset.filter(
+            is_subscribed=True, is_confirmed=False
+        ).count(),
+        "unsubscribed": queryset.filter(is_unsubscribed=True).count(),
+        "by_list": by_list,
+    }
+
+
+def _add_months(value, months):
+    month = value.month - 1 + months
+    year = value.year + month // 12
+    month = month % 12 + 1
+    return value.replace(year=year, month=month, day=1)
+
+
+def _period_start(value, period):
+    if period == "day":
+        return value
+    if period == "week":
+        return value - timedelta(days=value.weekday())
+    if period == "month":
+        return value.replace(day=1)
+    raise ValueError("period must be one of: day, week, month")
+
+
+def _period_offset(value, period, offset):
+    if period == "day":
+        return value + timedelta(days=offset)
+    if period == "week":
+        return value + timedelta(weeks=offset)
+    return _add_months(value, offset)
+
+
+def get_subscription_trend(
+    days=30,
+    list_name=None,
+    now=None,
+    period="day",
+    periods=None,
+):
+    """
+    Return zero-filled subscription counts by day, week, or month.
+
+    ``days`` keeps the previous daily API working. For weekly/monthly trends,
+    pass ``period="week"`` or ``period="month"`` with ``periods``.
+    """
+    if period not in {"day", "week", "month"}:
+        raise ValueError("period must be one of: day, week, month")
+
+    if periods is None:
+        periods = days if period == "day" else 12
+
+    if periods < 1:
+        raise ValueError("periods must be greater than zero")
+
+    end_date = _period_start(_current_date(now), period)
+    start_date = _period_offset(end_date, period, -(periods - 1))
+    queryset = _subscription_queryset(list_name)
+
+    dates = queryset.filter(
+        subscribed_at__date__gte=start_date,
+        subscribed_at__date__lte=_current_date(now),
+        is_subscribed=True,
+        is_confirmed=True,
+    ).values_list("subscribed_at", flat=True)
+
+    counts_by_period = {}
+    for subscribed_at in dates:
+        if timezone.is_aware(subscribed_at):
+            subscribed_at = timezone.localtime(subscribed_at)
+        bucket = _period_start(subscribed_at.date(), period)
+        counts_by_period[bucket] = counts_by_period.get(bucket, 0) + 1
+
+    return [
+        {
+            "day": _period_offset(start_date, period, offset),
+            "period": period,
+            "count": counts_by_period.get(
+                _period_offset(start_date, period, offset), 0
+            ),
+        }
+        for offset in range(periods)
+    ]

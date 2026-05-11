@@ -97,6 +97,16 @@ Get all mailing lists
 get_lists()
 ```
 
+Get subscription stats and trends
+```Python
+get_subscription_stats()
+get_subscription_stats(list_name="newsletter")
+get_subscription_trend(days=30, list_name="newsletter")
+get_subscription_trend(period="week", periods=12, list_name="newsletter")
+get_subscription_trend(period="month", periods=12, list_name="newsletter")
+```
+
+The Django admin subscription changelist also shows active confirmed stats and a weekly confirmed trend by default.
 
 
 ### Utility Functions
@@ -109,6 +119,8 @@ get_lists()
 - `get_lists()`: Get a list of all unique list names.
 - `get_user_list_members(list_name)`: Get a queryset of `User` objects who are subscribed to a given list.
 - `get_non_user_list_members(list_name)`: Retrieve emails of non-user subscribers to a specific list.
+- `get_subscription_stats(list_name=None)`: Get active confirmed counts for today, yesterday, last 7/30 days, plus active, unconfirmed, unsubscribed, and per-list counts.
+- `get_subscription_trend(days=30, list_name=None, period="day", periods=None)`: Get zero-filled daily, weekly, or monthly active confirmed subscription counts for trend displays.
 
 ### Views
 - `unsubscribe_view`: A view to handle unsubscription requests from unsubscribe links.

@@ -1,8 +1,10 @@
+from datetime import datetime, timedelta
+
 from django.test import TestCase, override_settings
 from django.core import mail
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
-from django.utils import translation
+from django.utils import timezone, translation
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.http import HttpResponse
@@ -19,6 +21,8 @@ from emaillist.utils import (
     send_confirmation_email,
     get_unsubscribe_url,
     make_token,
+    get_subscription_stats,
+    get_subscription_trend,
 )
 
 User = get_user_model()
@@ -345,6 +349,193 @@ class SubscriptionTests(TestCase):
         self.assertFalse(subscription.is_unsubscribed)
         self.assertTrue(subscription.is_confirmed)  # Should remain confirmed
         self.assertIsNone(subscription.user)
+
+    def test_get_subscription_stats(self):
+        now = timezone.now()
+        Subscription.objects.create(
+            email="today@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        yesterday = Subscription.objects.create(
+            email="yesterday@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        last_week = Subscription.objects.create(
+            email="last-week@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=False,
+        )
+        old = Subscription.objects.create(
+            email="old@example.com",
+            list_name="product",
+            is_subscribed=False,
+            is_unsubscribed=True,
+            is_confirmed=True,
+        )
+
+        Subscription.objects.filter(pk=yesterday.pk).update(
+            subscribed_at=now - timedelta(days=1)
+        )
+        Subscription.objects.filter(pk=last_week.pk).update(
+            subscribed_at=now - timedelta(days=6)
+        )
+        Subscription.objects.filter(pk=old.pk).update(
+            subscribed_at=now - timedelta(days=31)
+        )
+
+        stats = get_subscription_stats(now=now)
+
+        self.assertEqual(stats["new_today"], 1)
+        self.assertEqual(stats["new_yesterday"], 1)
+        self.assertEqual(stats["new_last_7_days"], 2)
+        self.assertEqual(stats["new_last_30_days"], 2)
+        self.assertEqual(stats["total"], 4)
+        self.assertEqual(stats["active"], 2)
+        self.assertEqual(stats["unconfirmed"], 1)
+        self.assertEqual(stats["unsubscribed"], 1)
+        self.assertEqual(stats["by_list"][0]["list_name"], "newsletter")
+        self.assertEqual(stats["by_list"][0]["total"], 3)
+        self.assertEqual(stats["by_list"][0]["active"], 2)
+        self.assertEqual(stats["by_list"][0]["unconfirmed"], 1)
+
+    def test_get_subscription_stats_for_list(self):
+        now = timezone.now()
+        Subscription.objects.create(
+            email="newsletter@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        Subscription.objects.create(
+            email="product@example.com",
+            list_name="product",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+
+        stats = get_subscription_stats(list_name="newsletter", now=now)
+
+        self.assertEqual(stats["list_name"], "newsletter")
+        self.assertEqual(stats["total"], 1)
+        self.assertEqual(stats["active"], 1)
+        self.assertEqual(len(stats["by_list"]), 1)
+        self.assertEqual(stats["by_list"][0]["list_name"], "newsletter")
+
+    def test_get_subscription_trend(self):
+        now = timezone.now()
+        yesterday = Subscription.objects.create(
+            email="trend-yesterday@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        Subscription.objects.create(
+            email="trend-today@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        Subscription.objects.filter(pk=yesterday.pk).update(
+            subscribed_at=now - timedelta(days=1)
+        )
+
+        trend = get_subscription_trend(days=3, list_name="newsletter", now=now)
+
+        self.assertEqual(len(trend), 3)
+        self.assertEqual(trend[0]["count"], 0)
+        self.assertEqual(trend[1]["count"], 1)
+        self.assertEqual(trend[2]["count"], 1)
+        expected_today = (
+            timezone.localtime(now).date() if timezone.is_aware(now) else now.date()
+        )
+        self.assertEqual(trend[2]["day"], expected_today)
+
+    def test_get_subscription_weekly_trend(self):
+        now = timezone.make_aware(datetime(2026, 5, 14, 12, 0))
+        current_week = Subscription.objects.create(
+            email="weekly-current@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        previous_week = Subscription.objects.create(
+            email="weekly-previous@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        older_week = Subscription.objects.create(
+            email="weekly-older@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        Subscription.objects.filter(pk=current_week.pk).update(subscribed_at=now)
+        Subscription.objects.filter(pk=previous_week.pk).update(
+            subscribed_at=now - timedelta(days=7)
+        )
+        Subscription.objects.filter(pk=older_week.pk).update(
+            subscribed_at=now - timedelta(days=14)
+        )
+
+        trend = get_subscription_trend(
+            period="week", periods=3, list_name="newsletter", now=now
+        )
+
+        self.assertEqual([item["count"] for item in trend], [1, 1, 1])
+        self.assertEqual(trend[0]["day"], datetime(2026, 4, 27).date())
+        self.assertEqual(trend[2]["day"], datetime(2026, 5, 11).date())
+        self.assertEqual(trend[2]["period"], "week")
+
+    def test_get_subscription_monthly_trend(self):
+        now = timezone.make_aware(datetime(2026, 5, 14, 12, 0))
+        current_month = Subscription.objects.create(
+            email="monthly-current@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        previous_month = Subscription.objects.create(
+            email="monthly-previous@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        older_month = Subscription.objects.create(
+            email="monthly-older@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=True,
+        )
+        Subscription.objects.filter(pk=current_month.pk).update(subscribed_at=now)
+        Subscription.objects.filter(pk=previous_month.pk).update(
+            subscribed_at=timezone.make_aware(datetime(2026, 4, 10, 12, 0))
+        )
+        Subscription.objects.filter(pk=older_month.pk).update(
+            subscribed_at=timezone.make_aware(datetime(2026, 3, 10, 12, 0))
+        )
+
+        trend = get_subscription_trend(
+            period="month", periods=3, list_name="newsletter", now=now
+        )
+
+        self.assertEqual([item["count"] for item in trend], [1, 1, 1])
+        self.assertEqual(trend[0]["day"], datetime(2026, 3, 1).date())
+        self.assertEqual(trend[2]["day"], datetime(2026, 5, 1).date())
+        self.assertEqual(trend[2]["period"], "month")
+
+    def test_get_subscription_trend_requires_positive_days(self):
+        with self.assertRaises(ValueError):
+            get_subscription_trend(days=0)
+
+    def test_get_subscription_trend_rejects_unknown_period(self):
+        with self.assertRaises(ValueError):
+            get_subscription_trend(period="year")
 
     def test_subscribe_already_confirmed(self):
         """Test that subscribing an already confirmed subscription returns the existing subscription
