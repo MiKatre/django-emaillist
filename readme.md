@@ -2,8 +2,6 @@
 
 <!-- Incredibly useful conversation: https://chat.openai.com/c/01d78616-2bec-41e5-b650-0f14791bd60b -->
 
-## Description
-
 Django Email List manages email subscriptions to mailing lists. It supports subscribing/unsubscribing users and emails to arbitrary lists, with features like unique unsubscribe links, rate limiting, double opt-in, and admin stats. The templates extend "base.html" and use inline styles compatible with CSS frameworks (Bootstrap, Tailwind, etc.).
 
 ## Admin stats
