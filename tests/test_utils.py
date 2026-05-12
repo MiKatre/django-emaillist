@@ -21,6 +21,7 @@ from emaillist.utils import (
     send_confirmation_email,
     get_unsubscribe_url,
     make_token,
+    get_subscription_projection,
     get_subscription_stats,
     get_subscription_trend,
 )
@@ -425,6 +426,81 @@ class SubscriptionTests(TestCase):
         self.assertEqual(stats["active"], 1)
         self.assertEqual(len(stats["by_list"]), 1)
         self.assertEqual(stats["by_list"][0]["list_name"], "newsletter")
+
+    def test_get_subscription_projection(self):
+        now = timezone.make_aware(datetime(2026, 5, 14, 12, 0))
+        for offset in range(10):
+            subscription = Subscription.objects.create(
+                email=f"projection-{offset}@example.com",
+                list_name="newsletter",
+                is_subscribed=True,
+                is_confirmed=True,
+            )
+            Subscription.objects.filter(pk=subscription.pk).update(
+                subscribed_at=now - timedelta(days=offset)
+            )
+        unconfirmed = Subscription.objects.create(
+            email="projection-unconfirmed@example.com",
+            list_name="newsletter",
+            is_subscribed=True,
+            is_confirmed=False,
+        )
+        Subscription.objects.filter(pk=unconfirmed.pk).update(subscribed_at=now)
+
+        projection = get_subscription_projection(
+            list_name="newsletter",
+            now=now,
+            baseline_days=10,
+            recent_days=5,
+        )
+
+        self.assertEqual(projection["active"], 10)
+        self.assertEqual(projection["baseline_count"], 10)
+        self.assertEqual(projection["recent_count"], 5)
+        self.assertEqual(projection["baseline_daily_rate"], 1)
+        self.assertEqual(projection["recent_daily_rate"], 1)
+        self.assertEqual(projection["projected_daily_rate"], 1)
+        self.assertEqual(projection["momentum"], "steady")
+        self.assertEqual(projection["in_30_days"], 40)
+        self.assertEqual(projection["in_6_months"], 192)
+        self.assertEqual(projection["in_1_year"], 375)
+
+    def test_get_subscription_projection_detects_rising_momentum(self):
+        now = timezone.make_aware(datetime(2026, 5, 14, 12, 0))
+        for offset in range(10):
+            subscription = Subscription.objects.create(
+                email=f"projection-rising-{offset}@example.com",
+                list_name="newsletter",
+                is_subscribed=True,
+                is_confirmed=True,
+            )
+            days_ago = offset // 2 if offset < 8 else offset
+            Subscription.objects.filter(pk=subscription.pk).update(
+                subscribed_at=now - timedelta(days=days_ago)
+            )
+
+        projection = get_subscription_projection(
+            list_name="newsletter",
+            now=now,
+            baseline_days=10,
+            recent_days=5,
+        )
+
+        self.assertEqual(projection["baseline_count"], 10)
+        self.assertEqual(projection["recent_count"], 8)
+        self.assertEqual(projection["momentum"], "rising")
+        self.assertGreater(
+            projection["projected_daily_rate"],
+            projection["baseline_daily_rate"],
+        )
+
+    def test_get_subscription_projection_validates_options(self):
+        with self.assertRaises(ValueError):
+            get_subscription_projection(baseline_days=0)
+        with self.assertRaises(ValueError):
+            get_subscription_projection(recent_days=0)
+        with self.assertRaises(ValueError):
+            get_subscription_projection(recent_weight=1.1)
 
     def test_get_subscription_trend(self):
         now = timezone.now()

@@ -1,7 +1,11 @@
 from django.contrib import admin
 
 from .models import Subscription
-from .utils import get_subscription_stats, get_subscription_trend
+from .utils import (
+    get_subscription_projection,
+    get_subscription_stats,
+    get_subscription_trend,
+)
 
 
 @admin.register(Subscription)
@@ -38,6 +42,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
         extra_context.update(
             {
                 "emaillist_stats": get_subscription_stats(list_name=list_name),
+                "emaillist_projection": get_subscription_projection(list_name=list_name),
                 "emaillist_trend": [
                     {
                         **item,

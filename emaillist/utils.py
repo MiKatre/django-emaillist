@@ -232,6 +232,78 @@ def get_subscription_stats(list_name=None, now=None):
     }
 
 
+def _active_subscription_queryset(list_name=None):
+    return _subscription_queryset(list_name).filter(
+        is_subscribed=True,
+        is_confirmed=True,
+    )
+
+
+def _subscription_count_since(queryset, date):
+    return queryset.filter(subscribed_at__date__gte=date).count()
+
+
+def get_subscription_projection(
+    list_name=None,
+    now=None,
+    baseline_days=60,
+    recent_days=14,
+    recent_weight=0.3,
+):
+    """
+    Project active confirmed subscribers from a blended baseline/recent pace.
+    """
+    if baseline_days < 1:
+        raise ValueError("baseline_days must be greater than zero")
+    if recent_days < 1:
+        raise ValueError("recent_days must be greater than zero")
+    if not 0 <= recent_weight <= 1:
+        raise ValueError("recent_weight must be between 0 and 1")
+
+    today = _current_date(now)
+    queryset = _active_subscription_queryset(list_name)
+    active = queryset.count()
+    baseline_count = _subscription_count_since(
+        queryset,
+        today - timedelta(days=baseline_days - 1),
+    )
+    recent_count = _subscription_count_since(
+        queryset,
+        today - timedelta(days=recent_days - 1),
+    )
+    baseline_daily_rate = baseline_count / baseline_days
+    recent_daily_rate = recent_count / recent_days
+    projected_daily_rate = (
+        baseline_daily_rate * (1 - recent_weight)
+        + recent_daily_rate * recent_weight
+    )
+
+    if baseline_daily_rate == 0:
+        momentum = "rising" if recent_daily_rate > 0 else "steady"
+    elif recent_daily_rate > baseline_daily_rate * 1.15:
+        momentum = "rising"
+    elif recent_daily_rate < baseline_daily_rate * 0.85:
+        momentum = "slowing"
+    else:
+        momentum = "steady"
+
+    return {
+        "list_name": list_name,
+        "active": active,
+        "baseline_days": baseline_days,
+        "recent_days": recent_days,
+        "baseline_count": baseline_count,
+        "recent_count": recent_count,
+        "baseline_daily_rate": baseline_daily_rate,
+        "recent_daily_rate": recent_daily_rate,
+        "projected_daily_rate": projected_daily_rate,
+        "momentum": momentum,
+        "in_30_days": round(active + projected_daily_rate * 30),
+        "in_6_months": round(active + projected_daily_rate * 182),
+        "in_1_year": round(active + projected_daily_rate * 365),
+    }
+
+
 def _add_months(value, months):
     month = value.month - 1 + months
     year = value.year + month // 12

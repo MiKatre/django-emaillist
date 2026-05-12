@@ -36,10 +36,13 @@
         line-height: 1.2;
         margin: 0;
       }
-      .emaillist-stats__grid {
+      .emaillist-stats__grid,
+      .emaillist-stats__side {
         display: grid;
-        grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
         gap: 1rem;
+      }
+      .emaillist-stats__grid {
+        grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
       }
       .emaillist-stats__trend-row {
         align-items: center;
@@ -58,6 +61,21 @@
         background: var(--primary, #79aec8);
         display: block;
         height: 100%;
+      }
+      .emaillist-stats__projection {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      }
+      .emaillist-stats__projection-value {
+        display: block;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+      .emaillist-stats__note {
+        color: var(--body-quiet-color, #666);
+        font-size: 0.75rem;
+        margin: 0.75rem 0 0;
       }
       .emaillist-stats__table {
         width: 100%;
@@ -130,32 +148,67 @@
           {% endfor %}
         </div>
 
-        <div class="emaillist-stats__panel">
-          <h3>{% trans "By list" %}</h3>
-          <table class="emaillist-stats__table">
-            <thead>
-              <tr>
-                <th>{% trans "List" %}</th>
-                <th>{% trans "Active" %}</th>
-                <th>{% trans "Unconfirmed" %}</th>
-                <th>{% trans "Unsubscribed" %}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in emaillist_stats.by_list %}
+        <div class="emaillist-stats__side">
+          <div class="emaillist-stats__panel">
+            <h3>{% trans "By list" %}</h3>
+            <table class="emaillist-stats__table">
+              <thead>
                 <tr>
-                  <td>{{ row.list_name }}</td>
-                  <td>{{ row.active }}</td>
-                  <td>{{ row.unconfirmed }}</td>
-                  <td>{{ row.unsubscribed }}</td>
+                  <th>{% trans "List" %}</th>
+                  <th>{% trans "Active" %}</th>
+                  <th>{% trans "Unconfirmed" %}</th>
+                  <th>{% trans "Unsubscribed" %}</th>
                 </tr>
-              {% empty %}
-                <tr>
-                  <td colspan="4">{% trans "No subscriptions yet." %}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {% for row in emaillist_stats.by_list %}
+                  <tr>
+                    <td>{{ row.list_name }}</td>
+                    <td>{{ row.active }}</td>
+                    <td>{{ row.unconfirmed }}</td>
+                    <td>{{ row.unsubscribed }}</td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="4">{% trans "No subscriptions yet." %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if emaillist_projection %}
+            <div class="emaillist-stats__panel">
+              <h3>{% trans "Growth projection" %}</h3>
+              <div class="emaillist-stats__projection">
+                <div>
+                  <span class="emaillist-stats__label">{% trans "Daily pace" %}</span>
+                  <span class="emaillist-stats__projection-value">{{ emaillist_projection.projected_daily_rate|floatformat:1 }}/day</span>
+                </div>
+                <div>
+                  <span class="emaillist-stats__label">{% trans "Momentum" %}</span>
+                  <span class="emaillist-stats__projection-value">{{ emaillist_projection.momentum|capfirst }}</span>
+                </div>
+                <div>
+                  <span class="emaillist-stats__label">{% trans "In 30 days" %}</span>
+                  <span class="emaillist-stats__projection-value">{{ emaillist_projection.in_30_days }}</span>
+                </div>
+                <div>
+                  <span class="emaillist-stats__label">{% trans "In 6 months" %}</span>
+                  <span class="emaillist-stats__projection-value">{{ emaillist_projection.in_6_months }}</span>
+                </div>
+                <div>
+                  <span class="emaillist-stats__label">{% trans "In 1 year" %}</span>
+                  <span class="emaillist-stats__projection-value">{{ emaillist_projection.in_1_year }}</span>
+                </div>
+              </div>
+              <p class="emaillist-stats__note">
+                {% blocktrans with baseline_days=emaillist_projection.baseline_days recent_days=emaillist_projection.recent_days %}
+                  Active confirmed subscribers projected from a {{ baseline_days }}-day average blended with {{ recent_days }}-day momentum.
+                {% endblocktrans %}
+              </p>
+            </div>
+          {% endif %}
         </div>
       </div>
     </section>

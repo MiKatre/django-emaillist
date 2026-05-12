@@ -108,9 +108,10 @@ get_subscription_stats(list_name="newsletter")
 get_subscription_trend(days=30, list_name="newsletter")
 get_subscription_trend(period="week", periods=12, list_name="newsletter")
 get_subscription_trend(period="month", periods=12, list_name="newsletter")
+get_subscription_projection(list_name="newsletter")
 ```
 
-The Django admin subscription changelist also shows active confirmed stats and a weekly confirmed trend by default.
+The Django admin subscription changelist also shows active confirmed stats, a weekly confirmed trend, and a momentum-adjusted growth projection by default.
 
 
 ### Utility Functions
@@ -125,6 +126,7 @@ The Django admin subscription changelist also shows active confirmed stats and a
 - `get_non_user_list_members(list_name)`: Retrieve emails of non-user subscribers to a specific list.
 - `get_subscription_stats(list_name=None)`: Get active confirmed counts for today, yesterday, last 7/30 days, plus active, unconfirmed, unsubscribed, and per-list counts.
 - `get_subscription_trend(days=30, list_name=None, period="day", periods=None)`: Get zero-filled daily, weekly, or monthly active confirmed subscription counts for trend displays.
+- `get_subscription_projection(list_name=None)`: Project active confirmed subscribers from a 60-day average blended with 14-day momentum.
 
 ### Views
 - `unsubscribe_view`: A view to handle unsubscription requests from unsubscribe links.
