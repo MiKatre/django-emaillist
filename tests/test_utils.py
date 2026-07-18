@@ -48,6 +48,7 @@ class SubscriptionTests(TestCase):
         self.assertEqual(subscription.email, "testuser@example.com")
         self.assertEqual(subscription.list_name, "test_list")
         self.assertTrue(subscription.is_confirmed)
+        self.assertIsNotNone(subscription.confirmed_at)
 
     def test_unsubscribe_user(self):
         # Subscribe and then unsubscribe the user
@@ -87,6 +88,55 @@ class SubscriptionTests(TestCase):
         self.assertFalse(
             subscription.is_confirmed
         )  # Confirmation should be false by default for non-users until double opt-in via email
+        self.assertIsNone(subscription.confirmed_at)
+
+    @patch('django.template.response.TemplateResponse.render')
+    def test_confirm_subscription_sets_timestamp_once(self, mock_render):
+        mock_render.return_value = HttpResponse('Mocked response')
+        email = "confirm-once@example.com"
+        list_name = "guest_list"
+        subscription = subscribe(email, list_name, auto_send_confirmation=False)
+        token = make_token(email)
+
+        response = self.client.get(
+            reverse(
+                "confirm_subscription",
+                kwargs={"email": email, "token": token, "list_name": list_name},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        subscription.refresh_from_db()
+        self.assertTrue(subscription.is_confirmed)
+        self.assertIsNotNone(subscription.confirmed_at)
+        first_confirmed_at = subscription.confirmed_at
+
+        self.client.get(
+            reverse(
+                "confirm_subscription",
+                kwargs={"email": email, "token": token, "list_name": list_name},
+            )
+        )
+        subscription.refresh_from_db()
+        self.assertEqual(subscription.confirmed_at, first_confirmed_at)
+
+    def test_legacy_confirmation_keeps_unknown_timestamp_on_resubscribe(self):
+        subscription = Subscription.objects.create(
+            email="legacy@example.com",
+            list_name="guest_list",
+            is_subscribed=False,
+            is_unsubscribed=True,
+            is_confirmed=True,
+        )
+
+        subscription = subscribe(
+            subscription.email,
+            subscription.list_name,
+            auto_send_confirmation=False,
+        )
+
+        self.assertTrue(subscription.is_confirmed)
+        self.assertIsNone(subscription.confirmed_at)
 
     def test_confirmation_email(self):
         # Test that a confirmation email is sent when subscribing a non-user

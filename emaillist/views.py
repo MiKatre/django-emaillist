@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django_ratelimit.decorators import ratelimit
+from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from .models import Subscription
@@ -49,8 +50,13 @@ def confirm_subscription(request, email, token, list_name):
     is_valid = check_token(token)
     if is_valid:
         # Find the subscription and update it to be confirmed
-        Subscription.objects.filter(email=email, list_name=list_name).update(
-            is_confirmed=True
+        Subscription.objects.filter(
+            email=email,
+            list_name=list_name,
+            is_confirmed=False,
+        ).update(
+            is_confirmed=True,
+            confirmed_at=timezone.now(),
         )
         subscription_confirmed.send(
             sender=Subscription, email=email, list_name=list_name

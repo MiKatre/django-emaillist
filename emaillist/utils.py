@@ -61,9 +61,16 @@ def subscribe(identifier, list_name, auto_send_confirmation=True):
     if existing_subscription and existing_subscription.is_subscribed and existing_subscription.is_confirmed:
         return existing_subscription
     
-    # Determine if we should keep the existing confirmation status
+    # Preserve an existing confirmation timestamp. New user subscriptions are
+    # auto-confirmed, while guest subscriptions await double opt-in.
     is_confirmed = True if user else (existing_subscription.is_confirmed if existing_subscription else False)
-    
+    if existing_subscription and existing_subscription.is_confirmed:
+        confirmed_at = existing_subscription.confirmed_at
+    elif user:
+        confirmed_at = timezone.now()
+    else:
+        confirmed_at = None
+
     subscription, created = Subscription.objects.update_or_create(
         email=email,
         list_name=list_name,
@@ -72,6 +79,7 @@ def subscribe(identifier, list_name, auto_send_confirmation=True):
             "is_unsubscribed": False,
             "user": user,
             "is_confirmed": is_confirmed,
+            "confirmed_at": confirmed_at,
         },
     )
 

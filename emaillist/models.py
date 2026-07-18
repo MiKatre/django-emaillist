@@ -17,6 +17,7 @@ class Subscription(models.Model):
     is_unsubscribed = models.BooleanField(default=False)
     subscribed_at = models.DateTimeField(auto_now_add=True)
     is_confirmed = models.BooleanField(default=False)  # Double opt-in for email only
+    confirmed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ("user", "list_name")
